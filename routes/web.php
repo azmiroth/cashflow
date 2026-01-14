@@ -22,18 +22,22 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', function () {
         return view('auth.login');
     })->name('login');
+    Route::post('/login', [\App\Http\Controllers\Auth\LoginController::class, 'login']);
 
     Route::get('/register', function () {
         return view('auth.register');
     })->name('register');
+    Route::post('/register', [\App\Http\Controllers\Auth\RegisterController::class, 'register']);
 
     Route::get('/forgot-password', function () {
         return view('auth.forgot-password');
     })->name('password.request');
+    Route::post('/forgot-password', [\App\Http\Controllers\Auth\PasswordResetLinkController::class, 'store'])->name('password.email');
 
     Route::get('/reset-password/{token}', function () {
         return view('auth.reset-password');
     })->name('password.reset');
+    Route::post('/reset-password', [\App\Http\Controllers\Auth\NewPasswordController::class, 'store'])->name('password.update');
 });
 
 // Authenticated routes
