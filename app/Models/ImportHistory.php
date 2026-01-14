@@ -26,12 +26,10 @@ class ImportHistory extends Model
         'filename',
         'file_path',
         'total_records',
-        'imported_records',
-        'skipped_records',
-        'error_records',
+        'successful_records',
+        'failed_records',
         'status',
         'error_message',
-        'import_date',
     ];
 
     /**

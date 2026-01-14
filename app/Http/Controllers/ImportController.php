@@ -70,7 +70,7 @@ class ImportController extends Controller
         $importHistory = ImportHistory::create([
             'organisation_id' => $organisation->id,
             'bank_account_id' => $bankAccount->id,
-            'user_id' => Auth::id(),
+            'imported_by' => Auth::id(),
             'filename' => $file->getClientOriginalName(),
             'file_path' => $file->store('imports'),
             'total_records' => 0,
