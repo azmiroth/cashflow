@@ -57,6 +57,7 @@ return new class extends Migration
                 $table->string('account_name', 255);
                 $table->string('account_number', 255)->unique();
                 $table->string('bank_name', 255);
+                $table->string('bsb_number', 6)->nullable();
                 $table->string('account_type', 50)->default('checking');
                 $table->string('currency', 3)->default('USD');
                 $table->decimal('opening_balance', 15, 2)->default(0);

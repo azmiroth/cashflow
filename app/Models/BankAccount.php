@@ -24,6 +24,7 @@ class BankAccount extends Model
         'account_name',
         'account_number',
         'bank_name',
+        'bsb_number',
         'account_type',
         'currency',
         'opening_balance',
