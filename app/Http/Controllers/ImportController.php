@@ -207,9 +207,13 @@ class ImportController extends Controller
                         // Get the balance value from the CSV
                         $csvBalance = $this->parseAmount($row[$balanceCol] ?? '');
                         
-                        // Check if a transaction with this exact balance already exists
-                        // If it does, it's a duplicate. If not, it's a new transaction.
+                        // Check if a transaction with ALL of these matching already exists:
+                        // date, amount, description, AND balance
+                        // If all match, it's a duplicate. If any are different, it's a new transaction.
                         $exists = Transaction::where('bank_account_id', $bankAccount->id)
+                            ->where('transaction_date', $date)
+                            ->where('amount', $amount)
+                            ->where('description', $description)
                             ->where('balance', $csvBalance)
                             ->exists();
                         
