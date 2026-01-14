@@ -28,6 +28,7 @@ class BankAccount extends Model
         'account_type',
         'currency',
         'opening_balance',
+        'opening_balance_date',
         'current_balance',
         'is_active',
     ];
@@ -37,6 +38,7 @@ class BankAccount extends Model
      */
     protected $casts = [
         'opening_balance' => 'decimal:2',
+        'opening_balance_date' => 'date',
         'current_balance' => 'decimal:2',
         'is_active' => 'boolean',
         'created_at' => 'datetime',

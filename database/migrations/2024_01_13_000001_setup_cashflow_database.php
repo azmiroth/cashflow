@@ -61,6 +61,7 @@ return new class extends Migration
                 $table->string('account_type', 50)->default('checking');
                 $table->string('currency', 3)->default('USD');
                 $table->decimal('opening_balance', 15, 2)->default(0);
+                $table->date('opening_balance_date')->nullable();
                 $table->decimal('current_balance', 15, 2)->default(0);
                 $table->boolean('is_active')->default(true);
                 $table->timestamps();
