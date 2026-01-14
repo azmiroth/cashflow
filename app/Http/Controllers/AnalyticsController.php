@@ -6,6 +6,7 @@ use App\Models\Organisation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AnalyticsController extends Controller
 {
@@ -39,6 +40,9 @@ class AnalyticsController extends Controller
             $monthEnd = $current->copy()->endOfMonth();
 
             $monthFlow = 0;
+            $monthInflows = 0;
+            $monthOutflows = 0;
+            
             foreach ($bankAccounts as $account) {
                 $transactions = $account->transactions()
                     ->whereBetween('transaction_date', [$monthStart, $monthEnd])
@@ -48,12 +52,24 @@ class AnalyticsController extends Controller
                 foreach ($transactions as $transaction) {
                     if ($transaction->type === 'credit') {
                         $monthFlow += $transaction->amount;
+                        $monthInflows += $transaction->amount;
                         $totalInflows += $transaction->amount;
                     } else {
                         $monthFlow -= $transaction->amount;
+                        $monthOutflows += $transaction->amount;
                         $totalOutflows += $transaction->amount;
                     }
                 }
+            }
+
+            // Debug logging for January
+            if ($monthKey === 'Jan 26' || $monthKey === 'Jan 2026') {
+                Log::info("Analytics Debug - $monthKey", [
+                    'month_inflows' => $monthInflows,
+                    'month_outflows' => $monthOutflows,
+                    'month_flow' => $monthFlow,
+                    'transaction_count' => count($transactions ?? [])
+                ]);
             }
 
             $monthlyData[$monthKey] = $monthFlow;
@@ -70,6 +86,14 @@ class AnalyticsController extends Controller
             ->whereIn('bank_account_id', $bankAccounts->pluck('id'))
             ->where('excluded_from_analysis', true)
             ->count();
+
+        // Debug logging for totals
+        Log::info("Analytics Debug - Totals", [
+            'total_inflows' => $totalInflows,
+            'total_outflows' => $totalOutflows,
+            'net_cash_flow' => $netCashFlow,
+            'monthly_data' => $monthlyData
+        ]);
 
         return view('dashboard.analytics', [
             'organisation' => $organisation,
