@@ -1,9 +1,4 @@
 <?php
-/**
- * Bank Account Controller
- * Version: 1.0
- * Created: 2026-01-13 GMT+11
- */
 
 namespace App\Http\Controllers;
 
@@ -19,71 +14,155 @@ class BankAccountController extends Controller
         $this->middleware('auth');
     }
 
-    public function index()
+    /**
+     * Display a listing of bank accounts
+     */
+    public function index(Organisation $organisation)
     {
-        $orgId = session('current_organisation_id');
-        $organisation = Organisation::findOrFail($orgId);
-        $this->authorize('view', $organisation);
+        $this->authorizeOrganisation($organisation);
 
         $bankAccounts = $organisation->bankAccounts()->get();
-        return view('bank-accounts.index', compact('organisation', 'bankAccounts'));
+
+        return view('bank-accounts.index', [
+            'organisation' => $organisation,
+            'bankAccounts' => $bankAccounts,
+            'totalBalance' => $organisation->getTotalBalance(),
+        ]);
     }
 
-    public function create()
+    /**
+     * Show the form for creating a new bank account
+     */
+    public function create(Organisation $organisation)
     {
-        $orgId = session('current_organisation_id');
-        $organisation = Organisation::findOrFail($orgId);
-        $this->authorize('view', $organisation);
+        $this->authorizeOrganisation($organisation);
 
-        return view('bank-accounts.create', compact('organisation'));
+        return view('bank-accounts.create', [
+            'organisation' => $organisation,
+        ]);
     }
 
-    public function store(Request $request)
+    /**
+     * Store a newly created bank account
+     */
+    public function store(Request $request, Organisation $organisation)
     {
-        $orgId = session('current_organisation_id');
-        $organisation = Organisation::findOrFail($orgId);
-        $this->authorize('view', $organisation);
+        $this->authorizeOrganisation($organisation);
 
         $validated = $request->validate([
             'account_name' => 'required|string|max:255',
-            'account_number' => 'required|string|unique:bank_accounts',
+            'account_number' => 'required|string|max:50|unique:bank_accounts',
             'bank_name' => 'required|string|max:255',
-            'account_type' => 'required|in:checking,savings,credit,other',
-            'currency' => 'required|string|max:3',
-            'opening_balance' => 'required|numeric',
+            'account_type' => 'required|in:checking,savings,credit,investment,other',
+            'currency' => 'required|string|size:3',
+            'opening_balance' => 'required|numeric|min:0',
         ]);
 
-        $organisation->bankAccounts()->create($validated);
+        $bankAccount = $organisation->bankAccounts()->create([
+            'account_name' => $validated['account_name'],
+            'account_number' => $validated['account_number'],
+            'bank_name' => $validated['bank_name'],
+            'account_type' => $validated['account_type'],
+            'currency' => $validated['currency'],
+            'opening_balance' => $validated['opening_balance'],
+            'current_balance' => $validated['opening_balance'],
+            'is_active' => true,
+        ]);
 
-        return redirect()->route('bank-accounts.index')->with('success', 'Bank account created successfully');
+        return redirect()->route('bank-accounts.show', [$organisation->id, $bankAccount->id])
+            ->with('success', 'Bank account created successfully!');
     }
 
-    public function edit(BankAccount $bankAccount)
+    /**
+     * Display the specified bank account
+     */
+    public function show(Organisation $organisation, BankAccount $bankAccount)
     {
-        $this->authorize('view', $bankAccount->organisation);
-        return view('bank-accounts.edit', compact('bankAccount'));
+        $this->authorizeOrganisation($organisation);
+        $this->authorizeBankAccount($bankAccount, $organisation);
+
+        $transactions = $bankAccount->transactions()
+            ->latest('transaction_date')
+            ->paginate(20);
+
+        return view('bank-accounts.show', [
+            'organisation' => $organisation,
+            'bankAccount' => $bankAccount,
+            'transactions' => $transactions,
+            'balance' => $bankAccount->current_balance,
+        ]);
     }
 
-    public function update(Request $request, BankAccount $bankAccount)
+    /**
+     * Show the form for editing the specified bank account
+     */
+    public function edit(Organisation $organisation, BankAccount $bankAccount)
     {
-        $this->authorize('view', $bankAccount->organisation);
+        $this->authorizeOrganisation($organisation);
+        $this->authorizeBankAccount($bankAccount, $organisation);
+
+        return view('bank-accounts.edit', [
+            'organisation' => $organisation,
+            'bankAccount' => $bankAccount,
+        ]);
+    }
+
+    /**
+     * Update the specified bank account
+     */
+    public function update(Request $request, Organisation $organisation, BankAccount $bankAccount)
+    {
+        $this->authorizeOrganisation($organisation);
+        $this->authorizeBankAccount($bankAccount, $organisation);
 
         $validated = $request->validate([
             'account_name' => 'required|string|max:255',
+            'account_number' => 'required|string|max:50|unique:bank_accounts,account_number,' . $bankAccount->id,
             'bank_name' => 'required|string|max:255',
-            'account_type' => 'required|in:checking,savings,credit,other',
+            'account_type' => 'required|in:checking,savings,credit,investment,other',
+            'currency' => 'required|string|size:3',
             'is_active' => 'boolean',
         ]);
 
         $bankAccount->update($validated);
 
-        return redirect()->route('bank-accounts.index')->with('success', 'Bank account updated successfully');
+        return redirect()->route('bank-accounts.show', [$organisation->id, $bankAccount->id])
+            ->with('success', 'Bank account updated successfully!');
     }
 
-    public function destroy(BankAccount $bankAccount)
+    /**
+     * Remove the specified bank account
+     */
+    public function destroy(Organisation $organisation, BankAccount $bankAccount)
     {
-        $this->authorize('view', $bankAccount->organisation);
+        $this->authorizeOrganisation($organisation);
+        $this->authorizeBankAccount($bankAccount, $organisation);
+
         $bankAccount->delete();
-        return redirect()->route('bank-accounts.index')->with('success', 'Bank account deleted successfully');
+
+        return redirect()->route('bank-accounts.index', $organisation->id)
+            ->with('success', 'Bank account deleted successfully!');
+    }
+
+    /**
+     * Authorize organisation access
+     */
+    private function authorizeOrganisation(Organisation $organisation)
+    {
+        $user = Auth::user();
+
+        if ($organisation->owner_id !== $user->id && !$user->memberOrganisations()->where('organisation_id', $organisation->id)->exists()) {
+            abort(403, 'Unauthorized access to this organisation');
+        }
+    }
+
+    /**
+     * Authorize bank account access
+     */
+    private function authorizeBankAccount(BankAccount $bankAccount, Organisation $organisation)
+    {
+        if ($bankAccount->organisation_id !== $organisation->id) {
+            abort(403, 'This bank account does not belong to this organisation');
+        }
     }
 }
