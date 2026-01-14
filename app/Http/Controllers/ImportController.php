@@ -233,21 +233,24 @@ class ImportController extends Controller
 
     /**
      * Parse date from various formats
+     * Supports: d/m/yyyy, dd/mm/yyyy, yyyy-mm-dd, mm/dd/yyyy, dd-mm-yyyy, yyyy/mm/dd, M d, Y, d M Y
      */
     private function parseDate($dateStr)
     {
+        $dateStr = trim($dateStr);
+        
         $formats = [
             'Y-m-d',
-            'm/d/Y',
             'd/m/Y',
             'd-m-Y',
+            'm/d/Y',
             'Y/m/d',
             'M d, Y',
             'd M Y',
         ];
 
         foreach ($formats as $format) {
-            $date = \DateTime::createFromFormat($format, trim($dateStr));
+            $date = \DateTime::createFromFormat($format, $dateStr);
             if ($date) {
                 return $date->format('Y-m-d');
             }

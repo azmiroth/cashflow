@@ -158,7 +158,7 @@
             <!-- Supported Formats -->
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 class="font-semibold text-blue-900 mb-2">Supported Formats</h3>
-                <p class="text-blue-800 text-sm mb-2"><strong>Date formats:</strong> D/M/YYYY, DD/MM/YYYY, YYYY-MM-DD, MM/DD/YYYY, DD-MM-YYYY, YYYY/MM/DD, M d, Y, d M Y</p>
+                <p class="text-blue-800 text-sm mb-2"><strong>Date formats:</strong> d/m/yyyy, dd/mm/yyyy, yyyy-mm-dd, mm/dd/yyyy, dd-mm-yyyy, yyyy/mm/dd, M d, Y, d M Y</p>
                 <p class="text-blue-800 text-sm mb-2"><strong>Amount formats:</strong> 1000.00, 1,000.00, $1,000.00, -96.1, 1.000,00 (European)</p>
                 <p class="text-blue-800 text-sm mb-2"><strong>Transaction Type:</strong> Automatically determined from amount sign - positive = deposit (credit), negative = withdrawal (debit)</p>
                 <p class="text-blue-800 text-sm"><strong>Reconciliation:</strong> If you provide a balance column, transactions will be marked as reconciled if their running balance matches the CSV balance</p>
