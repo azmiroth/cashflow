@@ -197,12 +197,31 @@ class ImportController extends Controller
                         continue;
                     }
 
-                    // Check for duplicates
-                    $exists = Transaction::where('bank_account_id', $bankAccount->id)
-                        ->where('transaction_date', $date)
-                        ->where('amount', $amount)
-                        ->where('description', $description)
-                        ->exists();
+                    // Check for duplicates (only if balance column was provided for reconciliation)
+                    // If balance column exists, we can accurately detect duplicates by checking:
+                    // date, amount, description, AND balance (running balance after transaction)
+                    $exists = false;
+                    
+                    if ($balanceCol !== null) {
+                        // Get the running balance up to this transaction
+                        $runningBalance = $this->calculateRunningBalance($bankAccount, $date, $amount, $type);
+                        
+                        // Check if exact same transaction exists (same date, amount, description, and resulting balance)
+                        $exists = Transaction::where('bank_account_id', $bankAccount->id)
+                            ->where('transaction_date', $date)
+                            ->where('amount', $amount)
+                            ->where('description', $description)
+                            ->where('running_balance', $runningBalance)
+                            ->exists();
+                    } else {
+                        // Without balance column, only check date, amount, description
+                        // This is less strict to allow multiple transactions with same details
+                        $exists = Transaction::where('bank_account_id', $bankAccount->id)
+                            ->where('transaction_date', $date)
+                            ->where('amount', $amount)
+                            ->where('description', $description)
+                            ->exists();
+                    }
 
                     if ($exists) {
                         $failed++;
