@@ -1,7 +1,8 @@
 <?php
 /**
  * Debug script to output all January transactions to a file
- * Run from SiteGround: php debug_transactions.php > /tmp/january_transactions.txt
+ * Run from SiteGround: php debug_transactions.php
+ * Output will be saved to: public_html/debug_transactions.txt
  */
 
 require __DIR__ . '/vendor/autoload.php';
@@ -14,8 +15,8 @@ $transactions = Transaction::whereBetween('transaction_date', ['2026-01-01', '20
     ->orderBy('transaction_date')
     ->get();
 
-echo "=== JANUARY 2026 TRANSACTIONS ===\n";
-echo "Total count: " . $transactions->count() . "\n\n";
+$output = "=== JANUARY 2026 TRANSACTIONS ===\n";
+$output .= "Total count: " . $transactions->count() . "\n\n";
 
 $totalInflows = 0;
 $totalOutflows = 0;
@@ -24,7 +25,7 @@ $includedOutflows = 0;
 
 foreach ($transactions as $t) {
     $excluded = $t->excluded_from_analysis ? 'YES' : 'NO';
-    echo sprintf(
+    $output .= sprintf(
         "ID: %d | Date: %s | Type: %s | Amount: %s | Excluded: %s | Description: %s\n",
         $t->id,
         $t->transaction_date,
@@ -47,11 +48,19 @@ foreach ($transactions as $t) {
     }
 }
 
-echo "\n=== SUMMARY ===\n";
-echo "Total Inflows (all): " . $totalInflows . "\n";
-echo "Total Outflows (all): " . $totalOutflows . "\n";
-echo "Total Net (all): " . ($totalInflows - $totalOutflows) . "\n\n";
+$output .= "\n=== SUMMARY ===\n";
+$output .= "Total Inflows (all): " . $totalInflows . "\n";
+$output .= "Total Outflows (all): " . $totalOutflows . "\n";
+$output .= "Total Net (all): " . ($totalInflows - $totalOutflows) . "\n\n";
 
-echo "Included Inflows: " . $includedInflows . "\n";
-echo "Included Outflows: " . $includedOutflows . "\n";
-echo "Included Net: " . ($includedInflows - $includedOutflows) . "\n";
+$output .= "Included Inflows: " . $includedInflows . "\n";
+$output .= "Included Outflows: " . $includedOutflows . "\n";
+$output .= "Included Net: " . ($includedInflows - $includedOutflows) . "\n";
+
+// Save to public directory
+$filePath = __DIR__ . '/public_html/debug_transactions.txt';
+file_put_contents($filePath, $output);
+
+echo "Debug file saved to: " . $filePath . "\n";
+echo "Access it at: https://cashflow.webtechnologies.com.au/debug_transactions.txt\n\n";
+echo $output;
