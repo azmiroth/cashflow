@@ -184,6 +184,42 @@
 </div>
 
 <script>
+const dropZone = document.querySelector('[ondrop]')?.parentElement || document.querySelector('.border-2.border-dashed');
+const fileInput = document.getElementById('csv_file');
+
+if (dropZone) {
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    // Highlight drop zone when item is dragged over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.add('border-blue-500', 'bg-blue-50');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+        }, false);
+    });
+
+    // Handle dropped files
+    dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        fileInput.files = files;
+        updateFileName(fileInput);
+    }, false);
+}
+
 function updateFileName(input) {
     const fileName = input.files[0]?.name || '';
     document.getElementById('file-name').textContent = fileName ? `Selected: ${fileName}` : '';
