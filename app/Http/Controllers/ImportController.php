@@ -200,6 +200,7 @@ class ImportController extends Controller
                     // Check for duplicates only if balance column was provided
                     // A transaction is a duplicate only if it has the same running balance
                     // This allows reimporting the same CSV and only importing new transactions
+                    // However, if a transaction previously failed but now has a different balance, allow it
                     $exists = false;
                     
                     if ($balanceCol !== null) {
@@ -211,6 +212,18 @@ class ImportController extends Controller
                         $exists = Transaction::where('bank_account_id', $bankAccount->id)
                             ->where('running_balance', $runningBalance)
                             ->exists();
+                        
+                        // If not found in transactions, check if it was previously flagged as failed
+                        // If it was failed before but now has a different balance, allow the import
+                        if (!$exists) {
+                            $wasPreviouslyFailed = \App\Models\FailedImportTransaction::where('transaction_date', $date)
+                                ->where('description', $description)
+                                ->where('amount', $rawAmount)
+                                ->exists();
+                            
+                            // If it was previously failed, we allow it to import (different balance means it's a new attempt)
+                            // If it wasn't previously failed, it's a new transaction, so allow it
+                        }
                     }
                     // Note: Without balance column, we don't check for duplicates
                     // This allows multiple transactions with the same date/amount/description
