@@ -49,7 +49,7 @@ class ImportController extends Controller
     }
 
     /**
-     * Process the CSV import
+     * Store import and process CSV
      */
     public function store(Request $request, Organisation $organisation, BankAccount $bankAccount)
     {
@@ -61,23 +61,16 @@ class ImportController extends Controller
             'date_column' => 'required|integer|min:0',
             'description_column' => 'required|integer|min:0',
             'amount_column' => 'required|integer|min:0',
-            'type_column' => 'required|integer|min:0',
             'reference_column' => 'nullable|integer|min:0',
         ]);
 
         $file = $request->file('csv_file');
-        $filename = $file->getClientOriginalName();
-        $filepath = $file->store('imports');
 
-        $user = Auth::user();
-
-        // Create import history record
         $importHistory = ImportHistory::create([
-            'organisation_id' => $organisation->id,
             'bank_account_id' => $bankAccount->id,
-            'filename' => $filename,
-            'file_path' => $filepath,
-            'imported_by' => $user->id,
+            'user_id' => Auth::id(),
+            'filename' => $file->getClientOriginalName(),
+            'file_path' => $file->store('imports'),
             'total_records' => 0,
             'successful_records' => 0,
             'failed_records' => 0,
@@ -91,7 +84,6 @@ class ImportController extends Controller
                 $validated['date_column'],
                 $validated['description_column'],
                 $validated['amount_column'],
-                $validated['type_column'],
                 $validated['reference_column'] ?? null
             );
 
@@ -117,9 +109,27 @@ class ImportController extends Controller
     }
 
     /**
-     * Process CSV file and import transactions
+     * Show import details
      */
-    private function processCSV($filepath, BankAccount $bankAccount, $dateCol, $descCol, $amountCol, $typeCol, $refCol = null)
+    public function show(Organisation $organisation, ImportHistory $import)
+    {
+        $this->authorizeOrganisation($organisation);
+
+        if ($import->bankAccount->organisation_id !== $organisation->id) {
+            abort(403, 'Unauthorized');
+        }
+
+        return view('imports.show', [
+            'organisation' => $organisation,
+            'import' => $import,
+        ]);
+    }
+
+    /**
+     * Process CSV file and import transactions
+     * Amounts: positive = credit (deposit), negative = debit (withdrawal)
+     */
+    private function processCSV($filepath, BankAccount $bankAccount, $dateCol, $descCol, $amountCol, $refCol = null)
     {
         $file = fopen($filepath, 'r');
         $total = 0;
@@ -140,12 +150,21 @@ class ImportController extends Controller
                     // Extract data from columns
                     $date = $this->parseDate($row[$dateCol] ?? '');
                     $description = $row[$descCol] ?? '';
-                    $amount = $this->parseAmount($row[$amountCol] ?? '');
-                    $type = $this->parseType($row[$typeCol] ?? '');
+                    $rawAmount = $row[$amountCol] ?? '';
                     $reference = $refCol !== null ? ($row[$refCol] ?? null) : null;
 
+                    // Parse amount and determine type based on sign
+                    $parsedAmount = $this->parseAmountWithType($rawAmount);
+                    if (!$parsedAmount) {
+                        $failed++;
+                        continue;
+                    }
+
+                    $amount = $parsedAmount['amount'];
+                    $type = $parsedAmount['type'];
+
                     // Validate required fields
-                    if (!$date || !$amount || !$type) {
+                    if (!$date || !$amount) {
                         $failed++;
                         continue;
                     }
@@ -181,21 +200,21 @@ class ImportController extends Controller
                 }
             }
 
+            fclose($file);
             DB::commit();
+
+            return [
+                'total' => $total,
+                'successful' => $successful,
+                'failed' => $failed,
+                'errors' => $errors,
+            ];
 
         } catch (\Exception $e) {
             DB::rollBack();
+            fclose($file);
             throw $e;
         }
-
-        fclose($file);
-
-        return [
-            'total' => $total,
-            'successful' => $successful,
-            'failed' => $failed,
-            'errors' => $errors,
-        ];
     }
 
     /**
@@ -224,48 +243,39 @@ class ImportController extends Controller
     }
 
     /**
-     * Parse amount from various formats
+     * Parse amount from various formats and determine type based on sign
+     * Positive amount = credit (deposit)
+     * Negative amount = debit (withdrawal)
      */
-    private function parseAmount($amountStr)
+    private function parseAmountWithType($amountStr)
     {
-        $amount = str_replace(['$', ',', ' '], '', trim($amountStr));
-        $amount = str_replace('.', '.', $amount); // Handle European format
+        // Remove currency symbols and spaces
+        $amount = str_replace(['$', ' '], '', trim($amountStr));
+        
+        // Handle European format (1.000,00)
+        if (preg_match('/^-?\\d+\\.\\d{3},\\d{2}$/', $amount)) {
+            $amount = str_replace(['.', ','], ['', '.'], $amount);
+        } else {
+            // Standard format - just remove commas
+            $amount = str_replace(',', '', $amount);
+        }
+        
         $amount = (float) $amount;
 
-        return $amount > 0 ? $amount : null;
-    }
-
-    /**
-     * Parse transaction type
-     */
-    private function parseType($typeStr)
-    {
-        $typeStr = strtolower(trim($typeStr));
-
-        if (in_array($typeStr, ['credit', 'in', '+', 'deposit', 'income'])) {
-            return 'credit';
-        } elseif (in_array($typeStr, ['debit', 'out', '-', 'withdrawal', 'expense'])) {
-            return 'debit';
+        // Determine type based on sign
+        if ($amount > 0) {
+            return [
+                'amount' => $amount,
+                'type' => 'credit',
+            ];
+        } elseif ($amount < 0) {
+            return [
+                'amount' => abs($amount),
+                'type' => 'debit',
+            ];
         }
 
         return null;
-    }
-
-    /**
-     * Show import history details
-     */
-    public function show(Organisation $organisation, ImportHistory $import)
-    {
-        $this->authorizeOrganisation($organisation);
-
-        if ($import->organisation_id !== $organisation->id) {
-            abort(403);
-        }
-
-        return view('imports.show', [
-            'organisation' => $organisation,
-            'import' => $import,
-        ]);
     }
 
     /**
@@ -273,10 +283,8 @@ class ImportController extends Controller
      */
     private function authorizeOrganisation(Organisation $organisation)
     {
-        $user = Auth::user();
-
-        if ($organisation->owner_id !== $user->id && !$user->memberOrganisations()->where('organisation_id', $organisation->id)->exists()) {
-            abort(403, 'Unauthorized access to this organisation');
+        if ($organisation->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized');
         }
     }
 
@@ -286,7 +294,7 @@ class ImportController extends Controller
     private function authorizeBankAccount(BankAccount $bankAccount, Organisation $organisation)
     {
         if ($bankAccount->organisation_id !== $organisation->id) {
-            abort(403, 'This bank account does not belong to this organisation');
+            abort(403, 'Unauthorized');
         }
     }
 }

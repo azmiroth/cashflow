@@ -107,24 +107,7 @@
                         @enderror
                     </div>
 
-                    <!-- Type Column -->
-                    <div>
-                        <label for="type_column" class="block text-sm font-medium text-gray-700 mb-2">Type Column *</label>
-                        <input 
-                            type="number" 
-                            id="type_column" 
-                            name="type_column" 
-                            value="{{ old('type_column', 3) }}"
-                            min="0"
-                            required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="3"
-                        >
-                        <p class="text-gray-600 text-xs mt-1">Column containing transaction type (credit/debit)</p>
-                        @error('type_column')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+
 
                     <!-- Reference Column -->
                     <div>
@@ -151,7 +134,7 @@
                 <h3 class="font-semibold text-blue-900 mb-2">Supported Formats</h3>
                 <p class="text-blue-800 text-sm mb-2"><strong>Date formats:</strong> YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, DD-MM-YYYY, YYYY/MM/DD, M d, Y, d M Y</p>
                 <p class="text-blue-800 text-sm mb-2"><strong>Amount formats:</strong> 1000.00, 1,000.00, $1,000.00, 1.000,00 (European)</p>
-                <p class="text-blue-800 text-sm"><strong>Type values:</strong> credit, in, +, debit, out, -</p>
+                <p class="text-blue-800 text-sm"><strong>Transaction Type:</strong> Automatically determined from amount sign - positive = deposit (credit), negative = withdrawal (debit)</p>
             </div>
 
             <!-- Buttons -->
