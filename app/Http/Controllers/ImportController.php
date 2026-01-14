@@ -28,9 +28,12 @@ class ImportController extends Controller
             ->latest()
             ->paginate(20);
 
+        $bankAccounts = $organisation->bankAccounts()->get();
+
         return view('imports.index', [
             'organisation' => $organisation,
             'imports' => $imports,
+            'bankAccounts' => $bankAccounts,
         ]);
     }
 
