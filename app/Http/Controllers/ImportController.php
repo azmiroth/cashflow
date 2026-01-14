@@ -87,7 +87,8 @@ class ImportController extends Controller
                 $validated['description_column'],
                 $validated['amount_column'],
                 $validated['reference_column'] ?? null,
-                $validated['balance_column'] ?? null
+                $validated['balance_column'] ?? null,
+                $importHistory->id
             );
 
             $importHistory->update([
@@ -133,7 +134,7 @@ class ImportController extends Controller
      * Amounts: positive = credit (deposit), negative = debit (withdrawal)
      * Balance column (if provided) is used for reconciliation
      */
-    private function processCSV($filepath, BankAccount $bankAccount, $dateCol, $descCol, $amountCol, $refCol = null, $balanceCol = null)
+    private function processCSV($filepath, BankAccount $bankAccount, $dateCol, $descCol, $amountCol, $refCol = null, $balanceCol = null, $importHistoryId = null)
     {
         $file = fopen($filepath, 'r');
         $total = 0;
@@ -161,6 +162,16 @@ class ImportController extends Controller
                     $parsedAmount = $this->parseAmountWithType($rawAmount);
                     if (!$parsedAmount) {
                         $failed++;
+                        if ($importHistoryId) {
+                            \App\Models\FailedImportTransaction::create([
+                                'import_history_id' => $importHistoryId,
+                                'row_number' => $total,
+                                'transaction_date' => null,
+                                'description' => $description,
+                                'amount' => $rawAmount,
+                                'error_reason' => 'Invalid amount format',
+                            ]);
+                        }
                         continue;
                     }
 
@@ -170,6 +181,16 @@ class ImportController extends Controller
                     // Validate required fields
                     if (!$date || !$amount) {
                         $failed++;
+                        if ($importHistoryId) {
+                            \App\Models\FailedImportTransaction::create([
+                                'import_history_id' => $importHistoryId,
+                                'row_number' => $total,
+                                'transaction_date' => $date,
+                                'description' => $description,
+                                'amount' => $rawAmount,
+                                'error_reason' => 'Missing required fields (date or amount)',
+                            ]);
+                        }
                         continue;
                     }
 
@@ -182,6 +203,16 @@ class ImportController extends Controller
 
                     if ($exists) {
                         $failed++;
+                        if ($importHistoryId) {
+                            \App\Models\FailedImportTransaction::create([
+                                'import_history_id' => $importHistoryId,
+                                'row_number' => $total,
+                                'transaction_date' => $date,
+                                'description' => $description,
+                                'amount' => $rawAmount,
+                                'error_reason' => 'Duplicate transaction (already imported)',
+                            ]);
+                        }
                         continue;
                     }
 
@@ -212,6 +243,16 @@ class ImportController extends Controller
                 } catch (\Exception $e) {
                     $failed++;
                     $errors[] = "Row $total: " . $e->getMessage();
+                    if ($importHistoryId) {
+                        \App\Models\FailedImportTransaction::create([
+                            'import_history_id' => $importHistoryId,
+                            'row_number' => $total,
+                            'transaction_date' => $date ?? null,
+                            'description' => $description ?? null,
+                            'amount' => $rawAmount ?? null,
+                            'error_reason' => $e->getMessage(),
+                        ]);
+                    }
                 }
             }
 

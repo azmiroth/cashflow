@@ -50,11 +50,19 @@ class ImportHistory extends Model
     }
 
     /**
-     * Get the bank account this import is for
+     * Get the bank account this import belongs to
      */
     public function bankAccount()
     {
         return $this->belongsTo(BankAccount::class);
+    }
+
+    /**
+     * Get the failed transactions from this import
+     */
+    public function failedTransactions()
+    {
+        return $this->hasMany(FailedImportTransaction::class);
     }
 
     /**

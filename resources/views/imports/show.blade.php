@@ -85,6 +85,58 @@
         @endif
     </div>
 
+    <!-- Failed Transactions -->
+    @if ($import->failedTransactions->count() > 0)
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Failed Transactions ({{ $import->failedTransactions->count() }})</h2>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-100 border-b-2 border-gray-300">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-gray-700 font-semibold">Row</th>
+                        <th class="px-4 py-3 text-left text-gray-700 font-semibold">Date</th>
+                        <th class="px-4 py-3 text-left text-gray-700 font-semibold">Description</th>
+                        <th class="px-4 py-3 text-left text-gray-700 font-semibold">Amount</th>
+                        <th class="px-4 py-3 text-left text-gray-700 font-semibold">Error Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($import->failedTransactions as $failed)
+                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                        <td class="px-4 py-3 text-gray-900">{{ $failed->row_number }}</td>
+                        <td class="px-4 py-3 text-gray-900">
+                            {{ $failed->transaction_date ? $failed->transaction_date->format('d/m/Y') : '-' }}
+                        </td>
+                        <td class="px-4 py-3 text-gray-900">{{ $failed->description ?? '-' }}</td>
+                        <td class="px-4 py-3 text-gray-900">{{ $failed->amount ?? '-' }}</td>
+                        <td class="px-4 py-3">
+                            <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                {{ $failed->error_reason }}
+                            </span>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p class="text-blue-900 text-sm">
+                <strong>How to fix:</strong> Review the failed transactions above. Common issues include:
+            </p>
+            <ul class="list-disc list-inside text-blue-900 text-sm mt-2 space-y-1">
+                <li><strong>Invalid amount format:</strong> Ensure amounts are in a valid number format (e.g., 1000.00 or 1,000.00)</li>
+                <li><strong>Missing required fields:</strong> Date and amount columns must have values</li>
+                <li><strong>Duplicate transaction:</strong> This transaction was already imported in a previous import</li>
+            </ul>
+            <p class="text-blue-900 text-sm mt-3">
+                Fix the issues in your CSV file and re-import. Duplicate transactions will be automatically skipped.
+            </p>
+        </div>
+    </div>
+    @endif
+
     <!-- Success Rate Chart -->
     <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Import Summary</h2>
