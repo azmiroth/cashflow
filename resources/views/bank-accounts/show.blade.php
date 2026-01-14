@@ -104,7 +104,7 @@
                 </thead>
                 <tbody>
                     @foreach($transactions as $transaction)
-                    <tr class="border-b border-gray-200 hover:bg-gray-50 {{ $transaction->excluded_from_analysis ? 'bg-gray-100' : '' }}">
+                    <tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors {{ $transaction->excluded_from_analysis ? 'bg-gray-100' : '' }}" data-transaction-id="{{ $transaction->id }}">
                         <td class="px-6 py-4 text-sm text-gray-900">
                             {{ $transaction->transaction_date->format('M d, Y') }}
                         </td>
@@ -123,18 +123,14 @@
                             {{ $transaction->reference ?? '-' }}
                         </td>
                         <td class="px-6 py-4 text-center">
-                            <form action="{{ route('transactions.toggle-exclusion', [$organisation->id, $bankAccount->id, $transaction->id]) }}" method="POST" class="inline">
-                                @csrf
-                                @if($transaction->excluded_from_analysis)
-                                    <button type="submit" class="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition">
-                                        Excluded
-                                    </button>
-                                @else
-                                    <button type="submit" class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition">
-                                        Include
-                                    </button>
-                                @endif
-                            </form>
+                            <button type="button" 
+                                    class="toggle-exclusion px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer {{ $transaction->excluded_from_analysis ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : 'bg-blue-100 text-blue-800 hover:bg-blue-200' }}"
+                                    data-transaction-id="{{ $transaction->id }}"
+                                    data-organisation-id="{{ $organisation->id }}"
+                                    data-bank-account-id="{{ $bankAccount->id }}"
+                                    data-excluded="{{ $transaction->excluded_from_analysis ? 'true' : 'false' }}">
+                                {{ $transaction->excluded_from_analysis ? 'Excluded' : 'Include' }}
+                            </button>
                         </td>
                     </tr>
                     @endforeach
@@ -156,4 +152,81 @@
         </a>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleButtons = document.querySelectorAll('.toggle-exclusion');
+    
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            const transactionId = this.dataset.transactionId;
+            const organisationId = this.dataset.organisationId;
+            const bankAccountId = this.dataset.bankAccountId;
+            const isExcluded = this.dataset.excluded === 'true';
+            
+            try {
+                const response = await fetch(
+                    `/organisations/${organisationId}/bank-accounts/${bankAccountId}/transactions/${transactionId}/toggle-exclusion`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }
+                    }
+                );
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Update button state
+                    const newExcluded = data.excluded_from_analysis;
+                    this.dataset.excluded = newExcluded ? 'true' : 'false';
+                    
+                    if (newExcluded) {
+                        this.textContent = 'Excluded';
+                        this.className = 'toggle-exclusion px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
+                    } else {
+                        this.textContent = 'Include';
+                        this.className = 'toggle-exclusion px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer bg-blue-100 text-blue-800 hover:bg-blue-200';
+                    }
+                    
+                    // Update row background
+                    const row = this.closest('tr');
+                    if (newExcluded) {
+                        row.classList.add('bg-gray-100');
+                    } else {
+                        row.classList.remove('bg-gray-100');
+                    }
+                    
+                    // Show success message
+                    showNotification(data.message || 'Transaction updated successfully');
+                } else {
+                    showNotification('Error updating transaction', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error updating transaction', 'error');
+            }
+        });
+    });
+    
+    function showNotification(message, type = 'success') {
+        // Create a simple notification
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-4 py-3 rounded-lg text-white text-sm z-50 ${
+            type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        }`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+});
+</script>
 @endsection

@@ -18,7 +18,7 @@ class TransactionController extends Controller
     /**
      * Toggle exclusion status of a transaction
      */
-    public function toggleExclusion(Organisation $organisation, BankAccount $bankAccount, Transaction $transaction)
+    public function toggleExclusion(Organisation $organisation, BankAccount $bankAccount, Transaction $transaction, Request $request)
     {
         $this->authorizeOrganisation($organisation);
         $this->authorizeBankAccount($bankAccount, $organisation);
@@ -31,7 +31,19 @@ class TransactionController extends Controller
         $transaction->excluded_from_analysis = !$transaction->excluded_from_analysis;
         $transaction->save();
 
-        return back()->with('success', 'Transaction ' . ($transaction->excluded_from_analysis ? 'excluded' : 'included') . ' from analysis');
+        $message = 'Transaction ' . ($transaction->excluded_from_analysis ? 'excluded' : 'included') . ' from analysis';
+
+        // Return JSON for AJAX requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'excluded_from_analysis' => $transaction->excluded_from_analysis,
+                'message' => $message
+            ]);
+        }
+
+        // Return redirect for regular requests
+        return back()->with('success', $message);
     }
 
     /**
