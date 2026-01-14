@@ -197,31 +197,23 @@ class ImportController extends Controller
                         continue;
                     }
 
-                    // Check for duplicates (only if balance column was provided for reconciliation)
-                    // If balance column exists, we can accurately detect duplicates by checking:
-                    // date, amount, description, AND balance (running balance after transaction)
+                    // Check for duplicates only if balance column was provided
+                    // A transaction is a duplicate only if it has the same running balance
+                    // This allows reimporting the same CSV and only importing new transactions
                     $exists = false;
                     
                     if ($balanceCol !== null) {
                         // Get the running balance up to this transaction
                         $runningBalance = $this->calculateRunningBalance($bankAccount, $date, $amount, $type);
                         
-                        // Check if exact same transaction exists (same date, amount, description, and resulting balance)
+                        // Check if a transaction with this exact running balance already exists
+                        // If it does, it's a duplicate. If not, it's a new transaction.
                         $exists = Transaction::where('bank_account_id', $bankAccount->id)
-                            ->where('transaction_date', $date)
-                            ->where('amount', $amount)
-                            ->where('description', $description)
                             ->where('running_balance', $runningBalance)
                             ->exists();
-                    } else {
-                        // Without balance column, only check date, amount, description
-                        // This is less strict to allow multiple transactions with same details
-                        $exists = Transaction::where('bank_account_id', $bankAccount->id)
-                            ->where('transaction_date', $date)
-                            ->where('amount', $amount)
-                            ->where('description', $description)
-                            ->exists();
                     }
+                    // Note: Without balance column, we don't check for duplicates
+                    // This allows multiple transactions with the same date/amount/description
 
                     if ($exists) {
                         $failed++;
@@ -232,7 +224,7 @@ class ImportController extends Controller
                                 'transaction_date' => $date,
                                 'description' => $description,
                                 'amount' => $rawAmount,
-                                'error_reason' => 'Duplicate transaction (already imported)',
+                                'error_reason' => 'Duplicate transaction (same balance already exists)',
                             ]);
                         }
                         continue;
