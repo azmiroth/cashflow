@@ -98,7 +98,7 @@ class ImportController extends Controller
                 'status' => $result['failed'] > 0 ? 'completed_with_errors' : 'completed',
             ]);
 
-            return redirect()->route('imports.show', [$organisation->id, $importHistory->id])
+            return redirect("/organisations/{$organisation->id}/imports/{$importHistory->id}")
                 ->with('success', "Import completed! {$result['successful']} transactions imported.");
 
         } catch (\Exception $e) {
@@ -107,7 +107,7 @@ class ImportController extends Controller
                 'error_message' => $e->getMessage(),
             ]);
 
-            return redirect()->back()
+            return redirect("/organisations/{$organisation->id}/imports")
                 ->with('error', 'Import failed: ' . $e->getMessage());
         }
     }
