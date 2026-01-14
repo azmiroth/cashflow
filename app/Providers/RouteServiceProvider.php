@@ -28,6 +28,9 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Model bindings
+        Route::model('import', \App\Models\ImportHistory::class);
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')
