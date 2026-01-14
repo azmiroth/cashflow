@@ -53,18 +53,22 @@ class BankAccountController extends Controller
             'account_name' => 'required|string|max:255',
             'account_number' => 'required|string|max:50|unique:bank_accounts',
             'bank_name' => 'required|string|max:255',
+            'bsb_number' => 'nullable|string|max:6',
             'account_type' => 'required|in:checking,savings,credit,investment,other',
             'currency' => 'required|string|size:3',
             'opening_balance' => 'required|numeric|min:0',
+            'opening_balance_date' => 'required|date',
         ]);
 
         $bankAccount = $organisation->bankAccounts()->create([
             'account_name' => $validated['account_name'],
             'account_number' => $validated['account_number'],
             'bank_name' => $validated['bank_name'],
+            'bsb_number' => $validated['bsb_number'],
             'account_type' => $validated['account_type'],
             'currency' => $validated['currency'],
             'opening_balance' => $validated['opening_balance'],
+            'opening_balance_date' => $validated['opening_balance_date'],
             'current_balance' => $validated['opening_balance'],
             'is_active' => true,
         ]);
@@ -119,8 +123,11 @@ class BankAccountController extends Controller
             'account_name' => 'required|string|max:255',
             'account_number' => 'required|string|max:50|unique:bank_accounts,account_number,' . $bankAccount->id,
             'bank_name' => 'required|string|max:255',
+            'bsb_number' => 'nullable|string|max:6',
             'account_type' => 'required|in:checking,savings,credit,investment,other',
             'currency' => 'required|string|size:3',
+            'opening_balance' => 'required|numeric|min:0',
+            'opening_balance_date' => 'required|date',
             'is_active' => 'boolean',
         ]);
 
