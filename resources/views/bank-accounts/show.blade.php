@@ -20,11 +20,35 @@
         </div>
     </div>
 
-    <!-- Balance Card -->
-    <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow p-6 text-white">
-        <p class="text-blue-100 text-sm font-medium">Current Balance</p>
-        <p class="text-4xl font-bold mt-2">{{ $bankAccount->currency }} {{ number_format($balance, 2) }}</p>
-        <p class="text-blue-100 text-sm mt-4">Account: {{ $bankAccount->account_number }}</p>
+    <!-- Balance Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Calculated Balance -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow p-6 text-white">
+            <p class="text-blue-100 text-sm font-medium">Calculated Balance (Today)</p>
+            <p class="text-3xl font-bold mt-2">{{ $bankAccount->currency }} {{ number_format($calculatedBalance, 2) }}</p>
+            <p class="text-blue-100 text-xs mt-4">Opening: {{ $bankAccount->currency }} {{ number_format($bankAccount->opening_balance, 2) }}</p>
+        </div>
+
+        <!-- Latest CSV Import Balance -->
+        <div class="{{ $latestImportBalance ? 'bg-gradient-to-r from-green-600 to-green-800' : 'bg-gradient-to-r from-gray-600 to-gray-800' }} rounded-lg shadow p-6 text-white">
+            <p class="text-green-100 text-sm font-medium">Latest CSV Import Balance</p>
+            @if($latestImportBalance)
+                <p class="text-3xl font-bold mt-2">{{ $bankAccount->currency }} {{ number_format($latestImportBalance, 2) }}</p>
+            @else
+                <p class="text-3xl font-bold mt-2 text-gray-300">No imports yet</p>
+            @endif
+        </div>
+
+        <!-- Match Status -->
+        <div class="{{ $balancesMatch ? 'bg-gradient-to-r from-emerald-600 to-emerald-800' : 'bg-gradient-to-r from-amber-600 to-amber-800' }} rounded-lg shadow p-6 text-white">
+            <p class="text-sm font-medium">Reconciliation Status</p>
+            @if($latestImportBalance)
+                <p class="text-3xl font-bold mt-2">{{ $balancesMatch ? '✓ Match' : '✗ Mismatch' }}</p>
+                <p class="text-xs mt-4">Difference: {{ $bankAccount->currency }} {{ number_format(abs($calculatedBalance - $latestImportBalance), 2) }}</p>
+            @else
+                <p class="text-3xl font-bold mt-2 text-gray-300">-</p>
+            @endif
+        </div>
     </div>
 
     <!-- Account Details -->

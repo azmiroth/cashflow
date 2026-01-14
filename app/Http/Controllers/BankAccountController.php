@@ -89,11 +89,36 @@ class BankAccountController extends Controller
             ->latest('transaction_date')
             ->paginate(20);
 
+        // Calculate current balance: opening_balance + sum of all transactions
+        $calculatedBalance = $bankAccount->opening_balance;
+        $allTransactions = $bankAccount->transactions()->get();
+        foreach ($allTransactions as $transaction) {
+            if ($transaction->type === 'credit') {
+                $calculatedBalance += $transaction->amount;
+            } else {
+                $calculatedBalance -= $transaction->amount;
+            }
+        }
+
+        // Get the latest CSV import balance
+        $latestImportBalance = $bankAccount->transactions()
+            ->whereNotNull('balance')
+            ->latest('transaction_date')
+            ->first()?->balance;
+
+        // Check if balances match
+        $balancesMatch = false;
+        if ($latestImportBalance !== null) {
+            $balancesMatch = abs($calculatedBalance - $latestImportBalance) < 0.01;
+        }
+
         return view('bank-accounts.show', [
             'organisation' => $organisation,
             'bankAccount' => $bankAccount,
             'transactions' => $transactions,
-            'balance' => $bankAccount->current_balance,
+            'calculatedBalance' => $calculatedBalance,
+            'latestImportBalance' => $latestImportBalance,
+            'balancesMatch' => $balancesMatch,
         ]);
     }
 
