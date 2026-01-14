@@ -23,10 +23,26 @@ class BankAccountController extends Controller
 
         $bankAccounts = $organisation->bankAccounts()->get();
 
+        // Calculate latest balance for each account
+        $totalBalance = 0;
+        foreach ($bankAccounts as $account) {
+            $calculatedBalance = $account->opening_balance;
+            $transactions = $account->transactions()->get();
+            foreach ($transactions as $transaction) {
+                if ($transaction->type === 'credit') {
+                    $calculatedBalance += $transaction->amount;
+                } else {
+                    $calculatedBalance -= $transaction->amount;
+                }
+            }
+            $account->latest_balance = $calculatedBalance;
+            $totalBalance += $calculatedBalance;
+        }
+
         return view('bank-accounts.index', [
             'organisation' => $organisation,
             'bankAccounts' => $bankAccounts,
-            'totalBalance' => $organisation->getTotalBalance(),
+            'totalBalance' => $totalBalance,
         ]);
     }
 

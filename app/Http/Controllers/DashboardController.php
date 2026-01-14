@@ -45,7 +45,21 @@ class DashboardController extends Controller
         }
 
         $bankAccounts = $organisation->bankAccounts()->where('is_active', true)->get();
-        $totalBalance = $organisation->getTotalBalance();
+        
+        // Calculate total balance from all active accounts
+        $totalBalance = 0;
+        foreach ($bankAccounts as $account) {
+            $calculatedBalance = $account->opening_balance;
+            $transactions = $account->transactions()->get();
+            foreach ($transactions as $transaction) {
+                if ($transaction->type === 'credit') {
+                    $calculatedBalance += $transaction->amount;
+                } else {
+                    $calculatedBalance -= $transaction->amount;
+                }
+            }
+            $totalBalance += $calculatedBalance;
+        }
 
         $recentTransactions = $organisation->transactions()
             ->latest('transaction_date')
