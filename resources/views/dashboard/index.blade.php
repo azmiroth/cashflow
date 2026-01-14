@@ -94,17 +94,17 @@
 
     <!-- Quick Actions -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <a href="{{ route('bank-accounts.index', $organisation->id) }}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
+        <a href="{{ route('bank-accounts.index', ['organisation' => $organisation->id]) }}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
             <h3 class="text-lg font-semibold text-gray-900 mb-2">Bank Accounts</h3>
             <p class="text-gray-600 text-sm">Manage your bank accounts</p>
         </a>
 
-        <a href="{{ route('imports.index', $organisation->id) }}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
+        <a href="{{ route('imports.index', ['organisation' => $organisation->id]) }}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
             <h3 class="text-lg font-semibold text-gray-900 mb-2">Import Statements</h3>
             <p class="text-gray-600 text-sm">Import bank statements via CSV</p>
         </a>
 
-        <a href="{{ route('predictions.index', $organisation->id) }}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
+        <a href="{{ route('predictions.index', ['organisation' => $organisation->id]) }}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
             <h3 class="text-lg font-semibold text-gray-900 mb-2">Predictions</h3>
             <p class="text-gray-600 text-sm">View cash flow predictions</p>
         </a>
