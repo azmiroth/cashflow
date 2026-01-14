@@ -62,6 +62,7 @@ class ImportController extends Controller
             'description_column' => 'required|integer|min:0',
             'amount_column' => 'required|integer|min:0',
             'reference_column' => 'nullable|integer|min:0',
+            'balance_column' => 'nullable|integer|min:0',
         ]);
 
         $file = $request->file('csv_file');
@@ -84,7 +85,8 @@ class ImportController extends Controller
                 $validated['date_column'],
                 $validated['description_column'],
                 $validated['amount_column'],
-                $validated['reference_column'] ?? null
+                $validated['reference_column'] ?? null,
+                $validated['balance_column'] ?? null
             );
 
             $importHistory->update([
@@ -128,8 +130,9 @@ class ImportController extends Controller
     /**
      * Process CSV file and import transactions
      * Amounts: positive = credit (deposit), negative = debit (withdrawal)
+     * Balance column (if provided) is used for reconciliation
      */
-    private function processCSV($filepath, BankAccount $bankAccount, $dateCol, $descCol, $amountCol, $refCol = null)
+    private function processCSV($filepath, BankAccount $bankAccount, $dateCol, $descCol, $amountCol, $refCol = null, $balanceCol = null)
     {
         $file = fopen($filepath, 'r');
         $total = 0;
@@ -181,6 +184,17 @@ class ImportController extends Controller
                         continue;
                     }
 
+                    // Calculate running balance for reconciliation
+                    $isReconciled = false;
+                    if ($balanceCol !== null) {
+                        $csvBalance = $this->parseAmount($row[$balanceCol] ?? '');
+                        if ($csvBalance !== null) {
+                            // Get the running balance up to this transaction
+                            $runningBalance = $this->calculateRunningBalance($bankAccount, $date, $amount, $type);
+                            $isReconciled = abs($runningBalance - $csvBalance) < 0.01;
+                        }
+                    }
+
                     // Create transaction
                     Transaction::create([
                         'bank_account_id' => $bankAccount->id,
@@ -189,7 +203,7 @@ class ImportController extends Controller
                         'amount' => $amount,
                         'type' => $type,
                         'reference' => $reference,
-                        'is_reconciled' => false,
+                        'is_reconciled' => $isReconciled,
                     ]);
 
                     $successful++;
@@ -243,6 +257,29 @@ class ImportController extends Controller
     }
 
     /**
+     * Parse amount from various formats (without type determination)
+     */
+    private function parseAmount($amountStr)
+    {
+        if (empty($amountStr)) {
+            return null;
+        }
+
+        // Remove currency symbols and spaces
+        $amount = str_replace(['$', ' '], '', trim($amountStr));
+        
+        // Handle European format (1.000,00)
+        if (preg_match('/^-?\\d+\\.\\d{3},\\d{2}$/', $amount)) {
+            $amount = str_replace(['.', ','], ['', '.'], $amount);
+        } else {
+            // Standard format - just remove commas
+            $amount = str_replace(',', '', $amount);
+        }
+        
+        return (float) $amount;
+    }
+
+    /**
      * Parse amount from various formats and determine type based on sign
      * Positive amount = credit (deposit)
      * Negative amount = debit (withdrawal)
@@ -276,6 +313,32 @@ class ImportController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Calculate running balance up to a specific transaction
+     */
+    private function calculateRunningBalance(BankAccount $bankAccount, $date, $amount, $type)
+    {
+        // Start with opening balance
+        $balance = $bankAccount->opening_balance;
+
+        // Get all transactions up to and including this date
+        $transactions = Transaction::where('bank_account_id', $bankAccount->id)
+            ->where('transaction_date', '<=', $date)
+            ->orderBy('transaction_date')
+            ->orderBy('created_at')
+            ->get();
+
+        foreach ($transactions as $transaction) {
+            if ($transaction->type === 'credit') {
+                $balance += $transaction->amount;
+            } else {
+                $balance -= $transaction->amount;
+            }
+        }
+
+        return $balance;
     }
 
     /**
