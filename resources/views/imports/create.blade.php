@@ -63,27 +63,8 @@
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="0"
                         >
-                        <p class="text-gray-600 text-xs mt-1">Column containing transaction date</p>
+                        <p class="text-gray-600 text-xs mt-1">Column containing transaction date (Australian format: D/M/YYYY or DD/MM/YYYY)</p>
                         @error('date_column')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Description Column -->
-                    <div>
-                        <label for="description_column" class="block text-sm font-medium text-gray-700 mb-2">Description Column *</label>
-                        <input 
-                            type="number" 
-                            id="description_column" 
-                            name="description_column" 
-                            value="{{ old('description_column', 1) }}"
-                            min="0"
-                            required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="1"
-                        >
-                        <p class="text-gray-600 text-xs mt-1">Column containing transaction description</p>
-                        @error('description_column')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
@@ -95,14 +76,33 @@
                             type="number" 
                             id="amount_column" 
                             name="amount_column" 
-                            value="{{ old('amount_column', 2) }}"
+                            value="{{ old('amount_column', 1) }}"
+                            min="0"
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="1"
+                        >
+                        <p class="text-gray-600 text-xs mt-1">Column containing transaction amount (positive = deposit, negative = withdrawal)</p>
+                        @error('amount_column')
+                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Description Column -->
+                    <div>
+                        <label for="description_column" class="block text-sm font-medium text-gray-700 mb-2">Description Column *</label>
+                        <input 
+                            type="number" 
+                            id="description_column" 
+                            name="description_column" 
+                            value="{{ old('description_column', 2) }}"
                             min="0"
                             required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="2"
                         >
-                        <p class="text-gray-600 text-xs mt-1">Column containing transaction amount</p>
-                        @error('amount_column')
+                        <p class="text-gray-600 text-xs mt-1">Column containing transaction description</p>
+                        @error('description_column')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
@@ -134,10 +134,10 @@
                             type="number" 
                             id="balance_column" 
                             name="balance_column" 
-                            value="{{ old('balance_column') }}"
+                            value="{{ old('balance_column', 3) }}"
                             min="0"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="Leave blank if not applicable"
+                            placeholder="3"
                         >
                         <p class="text-gray-600 text-xs mt-1">Column containing account balance after transaction (used for reconciliation)</p>
                         @error('balance_column')
@@ -147,11 +147,19 @@
                 </div>
             </div>
 
+            <!-- Example CSV Format -->
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                <h3 class="font-semibold text-gray-900 mb-2">Example CSV Format (Default Column Order)</h3>
+                <p class="text-gray-700 text-xs font-mono mb-2">Date | Amount | Description | Balance</p>
+                <p class="text-gray-600 text-xs font-mono mb-1">9/01/2026 | -96.1 | COLES 7523 NEW TOWN AU Card xx4671 | 9307.25</p>
+                <p class="text-gray-600 text-xs font-mono">10/01/2026 | 5000.00 | Salary Deposit | 14307.25</p>
+            </div>
+
             <!-- Supported Formats -->
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 class="font-semibold text-blue-900 mb-2">Supported Formats</h3>
-                <p class="text-blue-800 text-sm mb-2"><strong>Date formats:</strong> YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, DD-MM-YYYY, YYYY/MM/DD, M d, Y, d M Y</p>
-                <p class="text-blue-800 text-sm mb-2"><strong>Amount formats:</strong> 1000.00, 1,000.00, $1,000.00, 1.000,00 (European)</p>
+                <p class="text-blue-800 text-sm mb-2"><strong>Date formats:</strong> D/M/YYYY, DD/MM/YYYY, YYYY-MM-DD, MM/DD/YYYY, DD-MM-YYYY, YYYY/MM/DD, M d, Y, d M Y</p>
+                <p class="text-blue-800 text-sm mb-2"><strong>Amount formats:</strong> 1000.00, 1,000.00, $1,000.00, -96.1, 1.000,00 (European)</p>
                 <p class="text-blue-800 text-sm mb-2"><strong>Transaction Type:</strong> Automatically determined from amount sign - positive = deposit (credit), negative = withdrawal (debit)</p>
                 <p class="text-blue-800 text-sm"><strong>Reconciliation:</strong> If you provide a balance column, transactions will be marked as reconciled if their running balance matches the CSV balance</p>
             </div>
