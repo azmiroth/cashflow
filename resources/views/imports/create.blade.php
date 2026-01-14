@@ -129,17 +129,18 @@
 
                     <!-- Balance Column -->
                     <div>
-                        <label for="balance_column" class="block text-sm font-medium text-gray-700 mb-2">Balance Column (Optional)</label>
+                        <label for="balance_column" class="block text-sm font-medium text-gray-700 mb-2">Balance Column <span class="text-red-600">*</span></label>
                         <input 
                             type="number" 
                             id="balance_column" 
                             name="balance_column" 
                             value="{{ old('balance_column', 3) }}"
                             min="0"
+                            required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="3"
                         >
-                        <p class="text-gray-600 text-xs mt-1">Column containing account balance after transaction (used for reconciliation)</p>
+                        <p class="text-gray-600 text-xs mt-1">Column containing account balance after transaction (required for duplicate detection and reconciliation)</p>
                         @error('balance_column')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                         @enderror

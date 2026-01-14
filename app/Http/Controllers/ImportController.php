@@ -65,7 +65,7 @@ class ImportController extends Controller
             'description_column' => 'required|integer|min:0',
             'amount_column' => 'required|integer|min:0',
             'reference_column' => 'nullable|integer|min:0',
-            'balance_column' => 'nullable|integer|min:0',
+            'balance_column' => 'required|integer|min:0',
         ]);
 
         $file = $request->file('csv_file');
