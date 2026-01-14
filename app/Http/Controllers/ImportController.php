@@ -204,13 +204,13 @@ class ImportController extends Controller
                     $exists = false;
                     
                     if ($balanceCol !== null) {
-                        // Get the running balance up to this transaction
-                        $runningBalance = $this->calculateRunningBalance($bankAccount, $date, $amount, $type);
+                        // Get the balance value from the CSV
+                        $csvBalance = $this->parseAmount($row[$balanceCol] ?? '');
                         
-                        // Check if a transaction with this exact running balance already exists
+                        // Check if a transaction with this exact balance already exists
                         // If it does, it's a duplicate. If not, it's a new transaction.
                         $exists = Transaction::where('bank_account_id', $bankAccount->id)
-                            ->where('running_balance', $runningBalance)
+                            ->where('balance', $csvBalance)
                             ->exists();
                         
                         // If not found in transactions, check if it was previously flagged as failed
@@ -255,6 +255,11 @@ class ImportController extends Controller
                     }
 
                     // Create transaction
+                    $csvBalance = null;
+                    if ($balanceCol !== null) {
+                        $csvBalance = $this->parseAmount($row[$balanceCol] ?? '');
+                    }
+                    
                     Transaction::create([
                         'bank_account_id' => $bankAccount->id,
                         'transaction_date' => $date,
@@ -263,6 +268,7 @@ class ImportController extends Controller
                         'type' => $type,
                         'reference' => $reference,
                         'is_reconciled' => $isReconciled,
+                        'balance' => $csvBalance,
                     ]);
 
                     $successful++;

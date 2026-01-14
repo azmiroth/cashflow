@@ -28,6 +28,7 @@ class Transaction extends Model
         'type',
         'reference',
         'is_reconciled',
+        'balance',
     ];
 
     /**
@@ -36,6 +37,7 @@ class Transaction extends Model
     protected $casts = [
         'transaction_date' => 'date',
         'amount' => 'decimal:2',
+        'balance' => 'decimal:2',
         'is_reconciled' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
