@@ -46,6 +46,13 @@
                             Organisations
                         </a>
 
+                        <!-- Analytics Link -->
+                        @if(session('current_organisation_id'))
+                        <a href="{{ route('analytics.index', session('current_organisation_id')) }}" class="text-gray-700 hover:text-blue-600 font-medium">
+                            Analytics
+                        </a>
+                        @endif
+
                         <!-- User Menu -->
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600">

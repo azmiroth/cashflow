@@ -61,7 +61,17 @@
     const ctx = document.getElementById('monthlyCashFlowChart').getContext('2d');
     const monthlyData = @json($monthlyData);
     
-    const labels = Object.keys(monthlyData).sort();
+    // Sort labels chronologically (oldest to newest)
+    const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const labels = Object.keys(monthlyData).sort((a, b) => {
+        const [monthA, yearA] = a.split(' ');
+        const [monthB, yearB] = b.split(' ');
+        
+        if (yearA !== yearB) {
+            return parseInt(yearA) - parseInt(yearB);
+        }
+        return monthOrder.indexOf(monthA) - monthOrder.indexOf(monthB);
+    });
     const data = labels.map(month => monthlyData[month]);
     
     new Chart(ctx, {
