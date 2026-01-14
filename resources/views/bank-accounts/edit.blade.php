@@ -37,6 +37,23 @@
                 @enderror
             </div>
 
+            <!-- BSB Number -->
+            <div>
+                <label for="bsb_number" class="block text-sm font-medium text-gray-700 mb-2">BSB Number</label>
+                <input 
+                    type="text" 
+                    id="bsb_number" 
+                    name="bsb_number" 
+                    value="{{ old('bsb_number', $bankAccount->bsb_number ?? '') }}"
+                    maxlength="6"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                <p class="text-gray-600 text-xs mt-1">Format: XXX-XXX</p>
+                @error('bsb_number')
+                <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
             <!-- Account Number -->
             <div>
                 <label for="account_number" class="block text-sm font-medium text-gray-700 mb-2">Account Number</label>
@@ -63,7 +80,9 @@
                     value="{{ old('bank_name', $bankAccount->bank_name) }}"
                     required
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Commonwealth Bank of Australia"
                 >
+                <p class="text-gray-600 text-xs mt-1">e.g., Commonwealth Bank, Westpac, NAB, ANZ</p>
                 @error('bank_name')
                 <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                 @enderror
