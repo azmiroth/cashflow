@@ -82,6 +82,7 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Recent Transactions</h2>
+            <p class="text-sm text-gray-600 mt-1">Click "Exclude" to exclude a transaction from cash flow analysis</p>
         </div>
 
         @if($transactions->isEmpty())
@@ -98,11 +99,12 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Type</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase">Amount</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Reference</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($transactions as $transaction)
-                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <tr class="border-b border-gray-200 hover:bg-gray-50 {{ $transaction->excluded_from_analysis ? 'bg-gray-100' : '' }}">
                         <td class="px-6 py-4 text-sm text-gray-900">
                             {{ $transaction->transaction_date->format('M d, Y') }}
                         </td>
@@ -119,6 +121,20 @@
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600">
                             {{ $transaction->reference ?? '-' }}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <form action="{{ route('transactions.toggle-exclusion', [$organisation->id, $bankAccount->id, $transaction->id]) }}" method="POST" class="inline">
+                                @csrf
+                                @if($transaction->excluded_from_analysis)
+                                    <button type="submit" class="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition">
+                                        Excluded
+                                    </button>
+                                @else
+                                    <button type="submit" class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition">
+                                        Include
+                                    </button>
+                                @endif
+                            </form>
                         </td>
                     </tr>
                     @endforeach
