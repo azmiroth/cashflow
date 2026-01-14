@@ -12,10 +12,22 @@
         </div>
     </div>
 
-    <!-- Monthly Cash Flow Chart -->
+    <!-- Monthly Net Cash Flow Chart -->
     <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Monthly Net Cash Flow</h2>
         <canvas id="monthlyCashFlowChart" height="80"></canvas>
+    </div>
+
+    <!-- Monthly Inflows & Outflows Chart -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Monthly Inflows vs Outflows</h2>
+        <canvas id="inflowsOutflowsChart" height="80"></canvas>
+    </div>
+
+    <!-- Month-Ending Balance Chart -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Month-Ending Balance</h2>
+        <canvas id="balanceChart" height="80"></canvas>
     </div>
 
     <!-- Summary Stats -->
@@ -58,32 +70,36 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const ctx = document.getElementById('monthlyCashFlowChart').getContext('2d');
+    // Helper function to sort months chronologically
+    function getSortedMonths(monthlyData) {
+        const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return Object.keys(monthlyData).sort((a, b) => {
+            const [monthA, yearA] = a.split(' ');
+            const [monthB, yearB] = b.split(' ');
+            
+            if (yearA !== yearB) {
+                return parseInt(yearA) - parseInt(yearB);
+            }
+            return monthOrder.indexOf(monthA) - monthOrder.indexOf(monthB);
+        });
+    }
+
+    // Monthly Net Cash Flow Chart
+    const ctx1 = document.getElementById('monthlyCashFlowChart').getContext('2d');
     const monthlyData = @json($monthlyData);
+    const sortedMonths = getSortedMonths(monthlyData);
+    const netFlowData = sortedMonths.map(month => monthlyData[month]);
     
-    // Sort labels chronologically (oldest to newest)
-    const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const labels = Object.keys(monthlyData).sort((a, b) => {
-        const [monthA, yearA] = a.split(' ');
-        const [monthB, yearB] = b.split(' ');
-        
-        if (yearA !== yearB) {
-            return parseInt(yearA) - parseInt(yearB);
-        }
-        return monthOrder.indexOf(monthA) - monthOrder.indexOf(monthB);
-    });
-    const data = labels.map(month => monthlyData[month]);
-    
-    new Chart(ctx, {
+    new Chart(ctx1, {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: sortedMonths,
             datasets: [
                 {
                     label: 'Net Cash Flow',
-                    data: data,
-                    backgroundColor: data.map(value => value >= 0 ? '#10b981' : '#ef4444'),
-                    borderColor: data.map(value => value >= 0 ? '#059669' : '#dc2626'),
+                    data: netFlowData,
+                    backgroundColor: netFlowData.map(value => value >= 0 ? '#10b981' : '#ef4444'),
+                    borderColor: netFlowData.map(value => value >= 0 ? '#059669' : '#dc2626'),
                     borderWidth: 1,
                 }
             ]
@@ -103,6 +119,110 @@
             scales: {
                 y: {
                     beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '{{ $organisation->currency }} ' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Monthly Inflows vs Outflows Chart
+    const ctx2 = document.getElementById('inflowsOutflowsChart').getContext('2d');
+    const monthlyInflows = @json($monthlyInflows);
+    const monthlyOutflows = @json($monthlyOutflows);
+    
+    const inflowsData = sortedMonths.map(month => monthlyInflows[month] || 0);
+    const outflowsData = sortedMonths.map(month => monthlyOutflows[month] || 0);
+    
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: sortedMonths,
+            datasets: [
+                {
+                    label: 'Inflows',
+                    data: inflowsData,
+                    backgroundColor: '#10b981',
+                    borderColor: '#059669',
+                    borderWidth: 1,
+                },
+                {
+                    label: 'Outflows',
+                    data: outflowsData,
+                    backgroundColor: '#ef4444',
+                    borderColor: '#dc2626',
+                    borderWidth: 1,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                },
+                title: {
+                    display: false,
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '{{ $organisation->currency }} ' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Month-Ending Balance Chart
+    const ctx3 = document.getElementById('balanceChart').getContext('2d');
+    const monthlyBalances = @json($monthlyBalances);
+    
+    const balanceData = sortedMonths.map(month => monthlyBalances[month] || 0);
+    
+    new Chart(ctx3, {
+        type: 'line',
+        data: {
+            labels: sortedMonths,
+            datasets: [
+                {
+                    label: 'Month-Ending Balance',
+                    data: balanceData,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#3b82f6',
+                    pointBorderColor: '#1e40af',
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                },
+                title: {
+                    display: false,
+                }
+            },
+            scales: {
+                y: {
                     ticks: {
                         callback: function(value) {
                             return '{{ $organisation->currency }} ' + value.toLocaleString();

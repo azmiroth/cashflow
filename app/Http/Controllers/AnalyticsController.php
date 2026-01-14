@@ -6,7 +6,6 @@ use App\Models\Organisation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class AnalyticsController extends Controller
 {
@@ -30,18 +29,28 @@ class AnalyticsController extends Controller
 
         // Calculate monthly cash flows (excluding marked transactions)
         $monthlyData = [];
+        $monthlyInflows = [];
+        $monthlyOutflows = [];
+        $monthlyBalances = [];
         $totalInflows = 0;
         $totalOutflows = 0;
 
         $current = $startDate->copy();
+        $runningBalance = 0;
+
+        // Calculate opening balance for all accounts
+        foreach ($bankAccounts as $account) {
+            $runningBalance += $account->opening_balance;
+        }
+
         while ($current <= $endDate) {
             $monthKey = $current->format('M Y');
             $monthStart = $current->copy()->startOfMonth();
             $monthEnd = $current->copy()->endOfMonth();
 
             $monthFlow = 0;
-            $monthInflows = 0;
-            $monthOutflows = 0;
+            $inflows = 0;
+            $outflows = 0;
             
             foreach ($bankAccounts as $account) {
                 $transactions = $account->transactions()
@@ -52,27 +61,24 @@ class AnalyticsController extends Controller
                 foreach ($transactions as $transaction) {
                     if ($transaction->type === 'credit') {
                         $monthFlow += $transaction->amount;
-                        $monthInflows += $transaction->amount;
+                        $inflows += $transaction->amount;
                         $totalInflows += $transaction->amount;
                     } else {
                         $monthFlow -= $transaction->amount;
-                        $monthOutflows += $transaction->amount;
+                        $outflows += $transaction->amount;
                         $totalOutflows += $transaction->amount;
                     }
                 }
             }
 
-            // Debug logging for January
-            if ($monthKey === 'Jan 26' || $monthKey === 'Jan 2026') {
-                Log::info("Analytics Debug - $monthKey", [
-                    'month_inflows' => $monthInflows,
-                    'month_outflows' => $monthOutflows,
-                    'month_flow' => $monthFlow,
-                    'transaction_count' => count($transactions ?? [])
-                ]);
-            }
+            // Update running balance
+            $runningBalance += $monthFlow;
 
             $monthlyData[$monthKey] = $monthFlow;
+            $monthlyInflows[$monthKey] = $inflows;
+            $monthlyOutflows[$monthKey] = $outflows;
+            $monthlyBalances[$monthKey] = $runningBalance;
+
             $current->addMonth();
         }
 
@@ -87,18 +93,13 @@ class AnalyticsController extends Controller
             ->where('excluded_from_analysis', true)
             ->count();
 
-        // Debug logging for totals
-        Log::info("Analytics Debug - Totals", [
-            'total_inflows' => $totalInflows,
-            'total_outflows' => $totalOutflows,
-            'net_cash_flow' => $netCashFlow,
-            'monthly_data' => $monthlyData
-        ]);
-
         return view('dashboard.analytics', [
             'organisation' => $organisation,
             'bankAccounts' => $bankAccounts,
             'monthlyData' => $monthlyData,
+            'monthlyInflows' => $monthlyInflows,
+            'monthlyOutflows' => $monthlyOutflows,
+            'monthlyBalances' => $monthlyBalances,
             'totalInflows' => $totalInflows,
             'totalOutflows' => $totalOutflows,
             'netCashFlow' => $netCashFlow,
