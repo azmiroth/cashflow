@@ -99,7 +99,7 @@ return new class extends Migration
                 $table->date('transaction_date');
                 $table->string('description', 500);
                 $table->decimal('amount', 15, 2);
-                $table->enum('transaction_type', ['credit', 'debit']);
+                $table->enum('type', ['credit', 'debit']);
                 $table->string('reference', 255)->nullable();
                 $table->boolean('is_reconciled')->default(false);
                 $table->timestamps();
