@@ -98,7 +98,7 @@ class ImportController extends Controller
                 'status' => $result['failed'] > 0 ? 'completed_with_errors' : 'completed',
             ]);
 
-            return redirect()->route('imports.index', $organisation->id)
+            return redirect()->route('imports.show', [$organisation->id, $importHistory->id])
                 ->with('success', "Import completed! {$result['successful']} transactions imported.");
 
         } catch (\Exception $e) {
