@@ -183,7 +183,7 @@ return new class extends Migration
                 $table->integer('total_records')->default(0);
                 $table->integer('successful_records')->default(0);
                 $table->integer('failed_records')->default(0);
-                $table->enum('status', ['pending', 'processing', 'completed', 'failed'])->default('pending');
+                $table->enum('status', ['pending', 'processing', 'completed', 'completed_with_errors', 'failed'])->default('pending');
                 $table->longText('error_message')->nullable();
                 $table->timestamps();
 
