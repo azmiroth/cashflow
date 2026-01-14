@@ -99,7 +99,7 @@
             <p class="text-gray-600 text-sm">Manage your bank accounts</p>
         </a>
 
-        <a href="{{ route('import.index', $organisation->id) }}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
+        <a href="{{ route('imports.index', $organisation->id) }}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
             <h3 class="text-lg font-semibold text-gray-900 mb-2">Import Statements</h3>
             <p class="text-gray-600 text-sm">Import bank statements via CSV</p>
         </a>
