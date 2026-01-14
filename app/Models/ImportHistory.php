@@ -82,31 +82,19 @@ class ImportHistory extends Model
             return 0;
         }
 
-        return round(($this->imported_records / $this->total_records) * 100, 2);
+        return round(($this->successful_records / $this->total_records) * 100, 2);
     }
 
     /**
-     * Get skip rate percentage
+     * Get failed rate percentage
      */
-    public function getSkipRate()
+    public function getFailedRate()
     {
         if ($this->total_records === 0) {
             return 0;
         }
 
-        return round(($this->skipped_records / $this->total_records) * 100, 2);
-    }
-
-    /**
-     * Get error rate percentage
-     */
-    public function getErrorRate()
-    {
-        if ($this->total_records === 0) {
-            return 0;
-        }
-
-        return round(($this->error_records / $this->total_records) * 100, 2);
+        return round(($this->failed_records / $this->total_records) * 100, 2);
     }
 
     /**
@@ -114,7 +102,7 @@ class ImportHistory extends Model
      */
     public function isSuccessful()
     {
-        return $this->status === 'completed' && $this->error_records === 0;
+        return $this->status === 'completed' && $this->failed_records === 0;
     }
 
     /**
@@ -122,7 +110,7 @@ class ImportHistory extends Model
      */
     public function hasErrors()
     {
-        return $this->error_records > 0;
+        return $this->failed_records > 0;
     }
 
     /**
@@ -162,12 +150,10 @@ class ImportHistory extends Model
     {
         return [
             'total' => $this->total_records,
-            'imported' => $this->imported_records,
-            'skipped' => $this->skipped_records,
-            'errors' => $this->error_records,
+            'successful' => $this->successful_records,
+            'failed' => $this->failed_records,
             'success_rate' => $this->getSuccessRate(),
-            'skip_rate' => $this->getSkipRate(),
-            'error_rate' => $this->getErrorRate(),
+            'failed_rate' => $this->getFailedRate(),
         ];
     }
 
@@ -216,6 +202,6 @@ class ImportHistory extends Model
      */
     public function scopeWithErrors($query)
     {
-        return $query->where('error_records', '>', 0);
+        return $query->where('failed_records', '>', 0);
     }
 }
