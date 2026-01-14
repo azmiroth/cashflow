@@ -29,6 +29,7 @@ class Transaction extends Model
         'reference',
         'is_reconciled',
         'balance',
+        'excluded_from_analysis',
     ];
 
     /**
@@ -39,6 +40,7 @@ class Transaction extends Model
         'amount' => 'decimal:2',
         'balance' => 'decimal:2',
         'is_reconciled' => 'boolean',
+        'excluded_from_analysis' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\OrganisationController;
 use App\Http\Controllers\PredictionController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -64,6 +66,12 @@ Route::middleware('auth')->group(function () {
     Route::post('organisations/{organisation}/predictions', [PredictionController::class, 'store'])->name('predictions.store');
     Route::get('organisations/{organisation}/predictions/{prediction}', [PredictionController::class, 'show'])->name('predictions.show');
     Route::delete('organisations/{organisation}/predictions/{prediction}', [PredictionController::class, 'destroy'])->name('predictions.destroy');
+
+    // Analytics
+    Route::get('organisations/{organisation}/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+
+    // Transactions
+    Route::post('organisations/{organisation}/bank-accounts/{bankAccount}/transactions/{transaction}/toggle-exclusion', [TransactionController::class, 'toggleExclusion'])->name('transactions.toggle-exclusion');
 });
 
 // Logout route
