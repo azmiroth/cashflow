@@ -349,7 +349,7 @@ class ImportController extends Controller
      */
     private function authorizeOrganisation(Organisation $organisation)
     {
-        if ($organisation->user_id !== Auth::id()) {
+        if ($organisation->owner_id !== Auth::id()) {
             abort(403, 'Unauthorized');
         }
     }
