@@ -103,7 +103,7 @@ class BankAccountController extends Controller
 
         $transactions = $bankAccount->transactions()
             ->latest('transaction_date')
-            ->paginate(20);
+            ->paginate(500);
 
         // Calculate current balance: opening_balance + sum of all transactions
         $calculatedBalance = $bankAccount->opening_balance;

@@ -63,7 +63,7 @@ class AnalyticsController extends Controller
         // Calculate summary stats
         $netCashFlow = $totalInflows - $totalOutflows;
         $monthCount = count(array_filter($monthlyData, fn($v) => $v != 0));
-        $averageMonthlyFlow = $monthCount > 0 ? $netCashFlow / 12 : 0;
+        $averageMonthlyFlow = $netCashFlow / 12;
 
         // Count excluded transactions
         $excludedTransactionCount = DB::table('transactions')
