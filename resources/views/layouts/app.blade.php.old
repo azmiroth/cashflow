@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>{{ config('app.name', 'CashFlow') }} - @yield('title')</title>
+
+    <!-- Scripts -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="font-sans antialiased">
+    <div class="min-h-screen bg-gray-100">
+        <!-- Navigation -->
+        <nav class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="{{ route('dashboard') }}" class="text-xl font-bold text-blue-600">
+                            CashFlow
+                        </a>
+                    </div>
+
+                    @auth
+                    <div class="flex items-center space-x-4">
+                        <div class="relative group">
+                            <button class="text-gray-700 hover:text-gray-900">
+                                {{ Auth::user()->name }}
+                            </button>
+                            <div class="hidden group-hover:block absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-10">
+                                <a href="{{ route('profile.show') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    Profile
+                                </a>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                        Logout
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    @endauth
+                </div>
+            </div>
+        </nav>
+
+        <!-- Sidebar -->
+        @auth
+        <div class="flex">
+            <aside class="w-64 bg-white shadow-sm">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Menu</h3>
+                    <nav class="space-y-2">
+                        <a href="{{ route('dashboard') }}" class="block px-4 py-2 rounded-lg {{ request()->routeIs('dashboard') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50' }}">
+                            Dashboard
+                        </a>
+                        <a href="{{ route('organisations.index') }}" class="block px-4 py-2 rounded-lg {{ request()->routeIs('organisations.*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50' }}">
+                            Organisations
+                        </a>
+                        <a href="{{ route('bank-accounts.index') }}" class="block px-4 py-2 rounded-lg {{ request()->routeIs('bank-accounts.*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50' }}">
+                            Bank Accounts
+                        </a>
+                        <a href="{{ route('predictions.index') }}" class="block px-4 py-2 rounded-lg {{ request()->routeIs('predictions.*') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50' }}">
+                            Predictions
+                        </a>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1">
+                <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                    @if ($errors->any())
+                    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <h3 class="text-red-800 font-semibold mb-2">Errors:</h3>
+                        <ul class="text-red-700 space-y-1">
+                            @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    @endif
+
+                    @if (session('success'))
+                    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
+                        {{ session('success') }}
+                    </div>
+                    @endif
+
+                    @if (session('error'))
+                    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+                        {{ session('error') }}
+                    </div>
+                    @endif
+
+                    @yield('content')
+                </div>
+            </main>
+        </div>
+        @else
+        <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            @yield('content')
+        </div>
+        @endauth
+    </div>
+</body>
+</html>

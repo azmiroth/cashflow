@@ -1,0 +1,155 @@
+@extends('layouts.app')
+
+@section('title', 'Dashboard')
+
+@section('content')
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <div class="flex items-center space-x-4">
+            <select onchange="window.location.href = '{{ route('dashboard.switch') }}?organisation_id=' + this.value" class="px-4 py-2 border border-gray-300 rounded-lg">
+                @foreach ($organisations as $org)
+                <option value="{{ $org->id }}" {{ $org->id == $organisation->id ? 'selected' : '' }}>
+                    {{ $org->name }}
+                </option>
+                @endforeach
+            </select>
+            <a href="{{ route('organisations.create') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                New Organisation
+            </a>
+        </div>
+    </div>
+
+    <!-- Organisation Info -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">{{ $organisation->name }}</h2>
+        <div class="grid grid-cols-3 gap-4">
+            <div>
+                <p class="text-gray-600 text-sm">Total Balance</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $organisation->currency }} {{ number_format($totalBalance, 2) }}</p>
+            </div>
+            <div>
+                <p class="text-gray-600 text-sm">Bank Accounts</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $bankAccounts->count() }}</p>
+            </div>
+            <div>
+                <p class="text-gray-600 text-sm">Recent Transactions</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $recentTransactions->count() }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-2 gap-4">
+        <a href="{{ route('bank-accounts.create') }}" class="p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
+            <h3 class="font-semibold text-gray-900 mb-2">Add Bank Account</h3>
+            <p class="text-gray-600 text-sm">Create a new bank account for this organisation</p>
+        </a>
+        <a href="{{ route('predictions.create') }}" class="p-6 bg-white rounded-lg shadow hover:shadow-lg transition">
+            <h3 class="font-semibold text-gray-900 mb-2">Create Prediction</h3>
+            <p class="text-gray-600 text-sm">Generate cash flow predictions</p>
+        </a>
+    </div>
+
+    <!-- 30-Day Cash Flow Chart -->
+    @if (!empty($dailyCashFlow))
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">30-Day Cash Flow</h3>
+        <canvas id="cashFlowChart"></canvas>
+    </div>
+    @endif
+
+    <!-- Recent Transactions -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
+        @if ($recentTransactions->isEmpty())
+        <p class="text-gray-600">No transactions yet</p>
+        @else
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b">
+                        <th class="text-left py-2 px-4 text-gray-600 font-semibold">Date</th>
+                        <th class="text-left py-2 px-4 text-gray-600 font-semibold">Description</th>
+                        <th class="text-left py-2 px-4 text-gray-600 font-semibold">Account</th>
+                        <th class="text-right py-2 px-4 text-gray-600 font-semibold">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($recentTransactions as $transaction)
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="py-2 px-4 text-gray-900">{{ $transaction->transaction_date->format('M d, Y') }}</td>
+                        <td class="py-2 px-4 text-gray-900">{{ $transaction->description }}</td>
+                        <td class="py-2 px-4 text-gray-900">{{ $transaction->bankAccount->account_name }}</td>
+                        <td class="py-2 px-4 text-right font-semibold {{ $transaction->transaction_type === 'credit' ? 'text-green-600' : 'text-red-600' }}">
+                            {{ $transaction->transaction_type === 'credit' ? '+' : '-' }}{{ $organisation->currency }} {{ number_format($transaction->amount, 2) }}
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+    </div>
+
+    <!-- Recent Predictions -->
+    @if ($predictions->isNotEmpty())
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Predictions</h3>
+        <div class="space-y-4">
+            @foreach ($predictions as $prediction)
+            <div class="p-4 border border-gray-200 rounded-lg">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h4 class="font-semibold text-gray-900">{{ $prediction->prediction_name }}</h4>
+                        <p class="text-sm text-gray-600">{{ ucfirst(str_replace('_', ' ', $prediction->prediction_method)) }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-lg font-bold text-gray-900">{{ $organisation->currency }} {{ number_format($prediction->predicted_balance, 2) }}</p>
+                        <p class="text-sm {{ $prediction->trend === 'increasing' ? 'text-green-600' : ($prediction->trend === 'decreasing' ? 'text-red-600' : 'text-gray-600') }}">
+                            {{ ucfirst($prediction->trend) }} ({{ number_format($prediction->confidence_level, 1) }}% confidence)
+                        </p>
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+</div>
+
+@if (!empty($dailyCashFlow))
+<script>
+    const ctx = document.getElementById('cashFlowChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {!! json_encode(array_keys($dailyCashFlow)) !!},
+            datasets: [{
+                label: 'Daily Cash Flow',
+                data: {!! json_encode(array_values($dailyCashFlow)) !!},
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+@endif
+@endsection
