@@ -2,7 +2,7 @@
 /**
  * Debug script to output all January transactions to a file
  * Run from SiteGround: php debug_transactions.php
- * Output will be saved to: public_html/debug_transactions.txt
+ * Output will be saved to: ../debug_transactions.txt
  */
 
 require __DIR__ . '/vendor/autoload.php';
@@ -57,10 +57,10 @@ $output .= "Included Inflows: " . $includedInflows . "\n";
 $output .= "Included Outflows: " . $includedOutflows . "\n";
 $output .= "Included Net: " . ($includedInflows - $includedOutflows) . "\n";
 
-// Save to public directory
-$filePath = __DIR__ . '/public_html/debug_transactions.txt';
+// Save to parent directory
+$filePath = dirname(__DIR__) . '/debug_transactions.txt';
 file_put_contents($filePath, $output);
 
 echo "Debug file saved to: " . $filePath . "\n";
-echo "Access it at: https://cashflow.webtechnologies.com.au/debug_transactions.txt\n\n";
+echo "You can access it via SiteGround File Manager\n\n";
 echo $output;
