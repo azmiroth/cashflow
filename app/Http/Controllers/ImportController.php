@@ -68,6 +68,7 @@ class ImportController extends Controller
         $file = $request->file('csv_file');
 
         $importHistory = ImportHistory::create([
+            'organisation_id' => $organisation->id,
             'bank_account_id' => $bankAccount->id,
             'user_id' => Auth::id(),
             'filename' => $file->getClientOriginalName(),
